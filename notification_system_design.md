@@ -541,3 +541,206 @@ CREATE INDEX idx_placement_notifications
 ON notifications(notification_type, created_at);
 ```
 
+# Stage 4 — Performance Improvement Strategies
+
+## Overview
+
+As the number of students and notifications grows, the notification system must scale efficiently while maintaining low response times and high availability.
+
+Several optimization strategies can be implemented to improve overall system performance.
+
+---
+
+# 1. Redis Caching
+
+## Description
+
+Redis can be used to cache frequently accessed notifications in memory.
+
+Instead of querying the database repeatedly, notifications can be served directly from cache.
+
+---
+
+## Advantages
+
+- Faster API responses
+- Reduced database load
+- Lower latency
+- Improved scalability
+
+---
+
+## Disadvantages
+
+- Additional infrastructure required
+- Cache invalidation complexity
+- Extra memory usage
+
+---
+
+# 2. Pagination
+
+## Description
+
+Pagination limits the number of notifications returned per request.
+
+Example:
+
+```http
+GET /notifications?page=1&limit=20
+```
+
+---
+
+## Advantages
+
+- Smaller response size
+- Reduced memory usage
+- Faster query execution
+- Better frontend performance
+
+---
+
+## Disadvantages
+
+- Multiple API requests required
+- Added pagination logic
+
+---
+
+# 3. Lazy Loading
+
+## Description
+
+Notifications are loaded only when required by the user.
+
+Example:
+- Initial page loads latest 20 notifications
+- Older notifications load on scroll
+
+---
+
+## Advantages
+
+- Reduced initial load time
+- Better user experience
+- Lower bandwidth usage
+
+---
+
+## Disadvantages
+
+- Slightly more frontend complexity
+
+---
+
+# 4. Infinite Scrolling
+
+## Description
+
+Notifications load continuously as the user scrolls.
+
+---
+
+## Advantages
+
+- Smooth user experience
+- Efficient content loading
+
+---
+
+## Disadvantages
+
+- Harder navigation for very old notifications
+- Potential memory issues if poorly implemented
+
+---
+
+# 5. WebSockets for Real-Time Delivery
+
+## Description
+
+WebSockets maintain persistent communication between client and server.
+
+Notifications are pushed instantly to users without refreshing the page.
+
+---
+
+## Advantages
+
+- Real-time communication
+- Low latency
+- Better user engagement
+
+---
+
+## Disadvantages
+
+- Persistent connection management
+- Higher server resource usage
+
+---
+
+# 6. Background Workers and Queues
+
+## Description
+
+Heavy notification processing tasks can be moved to background workers.
+
+Queue systems:
+- RabbitMQ
+- Kafka
+- BullMQ
+
+---
+
+## Advantages
+
+- Better scalability
+- Asynchronous processing
+- Improved reliability
+
+---
+
+## Disadvantages
+
+- More infrastructure complexity
+- Queue monitoring required
+
+---
+
+# 7. Read Replicas
+
+## Description
+
+Read-heavy workloads can be distributed across multiple database replicas.
+
+---
+
+## Advantages
+
+- Improved read scalability
+- Reduced load on primary database
+
+---
+
+## Disadvantages
+
+- Replication lag
+- Increased infrastructure cost
+
+---
+
+# Recommended Combined Architecture
+
+The best scalable architecture would combine:
+
+- PostgreSQL as primary DB
+- Redis for caching
+- WebSockets for real-time updates
+- Queue workers for asynchronous processing
+- Pagination for efficient APIs
+- Read replicas for scaling reads
+
+---
+
