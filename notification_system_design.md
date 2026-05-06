@@ -392,3 +392,152 @@ WHERE id = 'notification-id';
 DELETE FROM notifications
 WHERE id = 'notification-id';
 ```
+
+# Stage 3 — Query Optimization Analysis
+
+## Problem Statement
+
+The following query is becoming slow as the number of notifications increases:
+
+```sql
+SELECT *
+FROM notifications
+WHERE student_id = 1042
+AND is_read = FALSE
+ORDER BY created_at DESC;
+```
+
+---
+
+# Why the Query Becomes Slow
+
+As the notifications table grows to millions of rows, the database faces several performance challenges:
+
+- Full table scans
+- Large sorting operations
+- Increased disk I/O
+- Higher memory consumption
+- Longer response times
+
+Without proper indexing, the database checks many rows before finding matching results.
+
+---
+
+# Root Cause Analysis
+
+The query filters using:
+
+- `student_id`
+- `is_read`
+
+and sorts using:
+
+- `created_at DESC`
+
+If indexes are missing, the database cannot efficiently locate relevant rows.
+
+---
+
+# Optimized Solution
+
+A composite index can significantly improve performance.
+
+## Recommended Composite Index
+
+```sql
+CREATE INDEX idx_notifications_query
+ON notifications(student_id, is_read, created_at DESC);
+```
+
+---
+
+# Why Composite Index Helps
+
+This index helps because:
+
+- `student_id` filtering becomes faster
+- `is_read` filtering becomes faster
+- `ORDER BY created_at DESC` becomes optimized
+- Database avoids unnecessary sorting
+
+---
+
+# Performance Improvement
+
+## Before Optimization
+
+```text
+Time Complexity ≈ O(n)
+```
+
+The database may scan most rows.
+
+---
+
+## After Optimization
+
+```text
+Time Complexity ≈ O(log n)
+```
+
+The database can directly access indexed records.
+
+---
+
+# Additional Optimization Techniques
+
+## 1. Pagination
+
+```http
+GET /notifications?page=1&limit=20
+```
+
+Reduces result size and improves response speed.
+
+---
+
+## 2. Redis Caching
+
+Frequently accessed notifications can be cached in Redis.
+
+Benefits:
+- Faster reads
+- Reduced database load
+- Lower latency
+
+---
+
+## 3. Read Replicas
+
+Read-heavy workloads can be distributed across replica databases.
+
+Benefits:
+- Improved scalability
+- Reduced pressure on primary DB
+
+---
+
+# Query for Students Receiving Placement Notifications
+
+## Requirement
+
+Find all students who received placement notifications in the last 7 days.
+
+## Optimized Query
+
+```sql
+SELECT DISTINCT student_id
+FROM notifications
+WHERE notification_type = 'Placement'
+AND created_at >= NOW() - INTERVAL '7 days';
+```
+
+---
+
+# Additional Recommended Index
+
+```sql
+CREATE INDEX idx_placement_notifications
+ON notifications(notification_type, created_at);
+```
+
