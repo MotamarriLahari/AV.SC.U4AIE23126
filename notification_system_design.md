@@ -21,3 +21,374 @@ The system supports:
 
 ```http
 http://localhost:5000/api
+```
+
+---
+
+# Authentication
+
+All APIs are protected using Bearer Token Authentication.
+
+## Example Header
+
+```http
+Authorization: Bearer <token>
+```
+
+---
+
+# 1. Get All Notifications
+
+## Endpoint
+
+```http
+GET /notifications
+```
+
+## Headers
+
+```json
+{
+  "Authorization": "Bearer <token>"
+}
+```
+
+## Response
+
+```json
+{
+  "notifications": [
+    {
+      "id": "1",
+      "type": "Placement",
+      "message": "Amazon hiring for SDE",
+      "isRead": false,
+      "createdAt": "2026-04-22T17:50:30Z"
+    }
+  ]
+}
+```
+
+---
+
+# 2. Get Unread Notifications
+
+## Endpoint
+
+```http
+GET /notifications/unread
+```
+
+## Response
+
+```json
+{
+  "notifications": [
+    {
+      "id": "2",
+      "type": "Result",
+      "message": "Mid sem results published",
+      "isRead": false,
+      "createdAt": "2026-04-22T17:50:30Z"
+    }
+  ]
+}
+```
+
+---
+
+# 3. Create Notification
+
+## Endpoint
+
+```http
+POST /notifications
+```
+
+## Request Body
+
+```json
+{
+  "studentId": 1042,
+  "type": "Placement",
+  "message": "Microsoft hiring drive announced"
+}
+```
+
+## Response
+
+```json
+{
+  "message": "Notification created successfully"
+}
+```
+
+---
+
+# 4. Mark Notification as Read
+
+## Endpoint
+
+```http
+PATCH /notifications/:id/read
+```
+
+## Response
+
+```json
+{
+  "message": "Notification marked as read"
+}
+```
+
+---
+
+# 5. Delete Notification
+
+## Endpoint
+
+```http
+DELETE /notifications/:id
+```
+
+## Response
+
+```json
+{
+  "message": "Notification deleted successfully"
+}
+```
+
+---
+
+# Notification Types
+
+Supported notification types:
+
+- Placement
+- Result
+- Event
+
+---
+
+# Real-Time Notification Mechanism
+
+The system uses WebSockets (Socket.IO) for real-time notification delivery.
+
+## Workflow
+
+1. Client connects using WebSocket
+2. Server maintains persistent connection
+3. When new notification arrives:
+   - Notification stored in DB
+   - Event emitted to connected client
+4. Client instantly receives notification without page refresh
+
+---
+
+# Error Response Format
+
+```json
+{
+  "error": true,
+  "message": "Unauthorized access"
+}
+```
+
+---
+
+# HTTP Status Codes
+
+| Status Code | Meaning |
+|---|---|
+| 200 | Success |
+| 201 | Resource Created |
+| 400 | Bad Request |
+| 401 | Unauthorized |
+| 404 | Resource Not Found |
+| 500 | Internal Server Error |
+
+---
+
+# Naming Conventions
+
+- RESTful API naming conventions used
+- JSON response structure is consistent
+- Proper HTTP methods used for each operation
+
+---
+
+# Stage 2 — Database Design and Storage Strategy
+
+## Recommended Database
+
+For the Campus Notifications Microservice, PostgreSQL is recommended as the primary database.
+
+---
+
+# Why PostgreSQL?
+
+PostgreSQL is suitable because:
+
+- Strong support for structured relational data
+- Efficient indexing capabilities
+- ACID compliance for reliable transactions
+- Excellent support for filtering and sorting
+- Scales well for notification systems
+- Supports JSON fields if flexibility is required later
+
+---
+
+# Database Schema
+
+## Notifications Table
+
+```sql
+CREATE TABLE notifications (
+    id UUID PRIMARY KEY,
+    student_id INT NOT NULL,
+    notification_type VARCHAR(20) NOT NULL,
+    message TEXT NOT NULL,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+---
+
+# Indexing Strategy
+
+To improve query performance:
+
+```sql
+CREATE INDEX idx_student_notifications
+ON notifications(student_id);
+
+CREATE INDEX idx_student_read
+ON notifications(student_id, is_read);
+
+CREATE INDEX idx_notification_type
+ON notifications(notification_type);
+
+CREATE INDEX idx_created_at
+ON notifications(created_at DESC);
+```
+
+---
+
+# Problems as Data Volume Increases
+
+As the number of students and notifications increases, several issues may arise:
+
+- Slow query execution
+- Increased DB load
+- Full table scans
+- High memory usage
+- Slower sorting operations
+- Increased API response times
+
+---
+
+# Solutions to Scaling Problems
+
+## 1. Proper Indexing
+
+Indexes reduce full table scans and improve filtering performance.
+
+---
+
+## 2. Pagination
+
+Instead of loading all notifications:
+
+```http
+GET /notifications?page=1&limit=20
+```
+
+This reduces response size and DB load.
+
+---
+
+## 3. Archiving Old Notifications
+
+Older notifications can be moved to archive tables or cold storage.
+
+---
+
+## 4. Database Partitioning
+
+Notifications table can be partitioned based on:
+
+- Date
+- Student ID
+
+This improves query efficiency.
+
+---
+
+## 5. Caching
+
+Frequently accessed notifications can be cached using Redis.
+
+---
+
+# SQL Queries Based on REST APIs
+
+## Fetch All Notifications
+
+```sql
+SELECT *
+FROM notifications
+WHERE student_id = 1042
+ORDER BY created_at DESC;
+```
+
+---
+
+## Fetch Unread Notifications
+
+```sql
+SELECT *
+FROM notifications
+WHERE student_id = 1042
+AND is_read = FALSE
+ORDER BY created_at DESC;
+```
+
+---
+
+## Create Notification
+
+```sql
+INSERT INTO notifications (
+    id,
+    student_id,
+    notification_type,
+    message
+)
+VALUES (
+    gen_random_uuid(),
+    1042,
+    'Placement',
+    'Amazon hiring drive announced'
+);
+```
+
+---
+
+## Mark Notification as Read
+
+```sql
+UPDATE notifications
+SET is_read = TRUE
+WHERE id = 'notification-id';
+```
+
+---
+
+## Delete Notification
+
+```sql
+DELETE FROM notifications
+WHERE id = 'notification-id';
+```
