@@ -744,3 +744,207 @@ The best scalable architecture would combine:
 
 ---
 
+# Stage 5 — Scalable Notification Delivery Design
+
+## Existing Pseudocode Problem
+
+The provided pseudocode processes notifications sequentially:
+
+```javascript
+for student in students:
+    save_to_database(student)
+    send_email(student)
+    send_push_notification(student)
+```
+
+This approach works for small numbers of users but becomes inefficient at scale.
+
+---
+
+# Problems in Existing Approach
+
+## 1. Sequential Processing
+
+Each notification waits for the previous one to complete.
+
+This increases total execution time significantly.
+
+---
+
+## 2. Poor Scalability
+
+For thousands of students:
+
+- High response times
+- Delayed notification delivery
+- Increased server load
+
+---
+
+## 3. Single Point of Failure
+
+If one operation fails:
+- Remaining notifications may not process
+- Entire workflow may stop
+
+---
+
+## 4. No Retry Mechanism
+
+Temporary failures:
+- email service downtime
+- network issues
+
+can cause permanent notification loss.
+
+---
+
+## 5. Tight Coupling
+
+Database operations, email sending, and push notifications are tightly connected.
+
+This reduces flexibility and maintainability.
+
+---
+
+# Recommended Scalable Architecture
+
+A queue-based asynchronous architecture is recommended.
+
+## Architecture Flow
+
+```text
+Producer → Message Queue → Worker Services
+```
+
+---
+
+# Components
+
+## 1. Producer Service
+
+The API server receives notification requests and publishes jobs to queue.
+
+Example queues:
+- RabbitMQ
+- Kafka
+- BullMQ
+
+---
+
+## 2. Message Queue
+
+The queue stores notification jobs temporarily.
+
+Benefits:
+- Load balancing
+- Retry support
+- Reliable processing
+
+---
+
+## 3. Worker Services
+
+Separate workers process notifications independently.
+
+Workers can:
+- save notifications to DB
+- send emails
+- send push notifications
+
+---
+
+# Improved Pseudocode
+
+## Producer
+
+```javascript
+for (const student of students) {
+
+    queue.publish({
+        student,
+        message
+    });
+
+}
+```
+
+---
+
+## Worker
+
+```javascript
+consume(queue, async (job) => {
+
+    await saveToDatabase(job);
+
+    await sendEmail(job);
+
+    await sendPushNotification(job);
+
+});
+```
+
+---
+
+# Advantages of Queue-Based Architecture
+
+## 1. Scalability
+
+Workers can scale horizontally.
+
+More workers = faster processing.
+
+---
+
+## 2. Reliability
+
+Failed jobs can retry automatically.
+
+---
+
+## 3. Better Performance
+
+API responds quickly without waiting for all notifications.
+
+---
+
+## 4. Fault Isolation
+
+Failure in email service does not stop database operations.
+
+---
+
+## 5. Asynchronous Processing
+
+Heavy operations move to background workers.
+
+---
+
+# Additional Improvements
+
+## Retry Mechanism
+
+Failed jobs can retry automatically with exponential backoff.
+
+---
+
+## Dead Letter Queue (DLQ)
+
+Failed notifications after multiple retries can move to DLQ for debugging.
+
+---
+
+## Monitoring
+
+Tools:
+- Prometheus
+- Grafana
+
+can monitor:
+- queue size
+- worker health
+- processing speed
+
+---
+
