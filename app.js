@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
 require("dotenv").config();
+const notificationRoutes = require("./routes/notificationRoutes");
 const scheduleRoutes = require("./routes/scheduleRoutes");
 
 const app = express();
@@ -14,7 +15,9 @@ app.get("/", (req, res) => {
     res.send("Vehicle Scheduler Backend Running");
 });
 app.use("/schedule", scheduleRoutes);
+app.use("/notifications", notificationRoutes);
 const PORT = process.env.PORT || 5000;
+
 
 
 app.listen(PORT, () => {
