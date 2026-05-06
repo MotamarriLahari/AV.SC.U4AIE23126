@@ -6,13 +6,14 @@ const notificationRoutes = require("./routes/notificationRoutes");
 const scheduleRoutes = require("./routes/scheduleRoutes");
 
 const app = express();
+app.set("json spaces", 2);
 
 app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
 
 app.get("/", (req, res) => {
-    res.send("Vehicle Scheduler Backend Running");
+    res.send("Campus Notifications Microservice Running");
 });
 app.use("/schedule", scheduleRoutes);
 app.use("/notifications", notificationRoutes);
